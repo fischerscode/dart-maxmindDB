@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  dart_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.PUB_CACHE }}
+            .dart_tool
+            .packages
+          key: ${{ runner.os }}-dart
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart test
