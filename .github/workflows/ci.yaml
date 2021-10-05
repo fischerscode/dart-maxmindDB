@@ -17,6 +17,16 @@ jobs:
             .dart_tool
             .packages
           key: ${{ runner.os }}-dart
+
+      - name: Download City database
+        run: |
+          wget -O GeoLite2-City.tar.gz https://download.maxmind.com/app/geoip_download\?edition_id\=GeoLite2-City\&license_key\=${{ secrets.MAXMIND_KEY }}\&suffix\=tar.gz
+          tar -xf GeoLite2-City.tar.gz
+          rm GeoLite2-City.tar.gz
+          mv $(ls -d -- GeoLite2-City_[0-9]*)/GeoLite2-City.mmdb ./
+          echo "::set-output name=build::$(ls -d -- GeoLite2-City_[0-9]* | sed -e 's/GeoLite2-City_//g')"
+          rm -r GeoLite2-City_*
+
       - uses: dart-lang/setup-dart@v1
       - run: dart pub get
       - run: dart test

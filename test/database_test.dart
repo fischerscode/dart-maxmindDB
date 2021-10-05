@@ -147,6 +147,17 @@ main() async {
       });
     }
   }
+
+  test("location", () async {
+    File citydatabase = File('GeoLite2-City.mmdb');
+    if (await citydatabase.exists()) {
+      var database = await MaxMindDatabase.file(citydatabase);
+      expect(
+          (await database.search('8.8.8.8'))?['location']?['latitude'], 37.751);
+      expect((await database.search('8.8.8.8'))?['location']?['longitude'],
+          -97.822);
+    }
+  });
 }
 
 Future<void> downloadDatabase(String name) async {
