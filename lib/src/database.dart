@@ -198,15 +198,10 @@ class MaxMindDatabase {
       case _Type.Double:
         assert(size == 8);
 
-        var value = BigInt.from(0);
+        var bytes =
+            ByteData.sublistView(await data.readBytes(position, position + 8));
 
-        for (var i = 0; i < size; i++) {
-          value = value << 8;
-          value = value + BigInt.from(await data[position]);
-          position++;
-        }
-
-        return Data(position, value.toUnsigned(16).toDouble());
+        return Data(position + 8, bytes.getFloat64(0));
       case _Type.Bytes:
         return Data(
             position + size, await data.readBytes(position, position + size));
