@@ -6,8 +6,6 @@ import 'dart:typed_data';
 
 import 'data_provider.dart';
 
-import 'package:extendedip/extendedip.dart';
-
 class MaxMindDatabase {
   final int node_count;
   final int record_size;
@@ -68,7 +66,10 @@ class MaxMindDatabase {
   }
 
   Future<dynamic?> search(String address) {
-    final ip = InternetAddress(address).toIPv6();
+    var ip = InternetAddress(address);
+    if (ip.type == InternetAddressType.IPv4 && ip_version == 6) {
+      ip = InternetAddress('::FFFF:${ip.address}');
+    }
 
     if (ip.type == InternetAddressType.IPv6 && ip_version == 4) {
       throw Exception(
