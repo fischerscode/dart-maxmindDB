@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'data_provider.dart';
+import 'package:extendedip/extendedip.dart';
 
 class MaxMindDatabase {
   final int node_count;
@@ -66,17 +67,20 @@ class MaxMindDatabase {
   }
 
   Future<dynamic?> search(String address) {
-    var ip = InternetAddress(address);
-    if (ip.type == InternetAddressType.IPv4 && ip_version == 6) {
-      ip = InternetAddress('::FFFF:${ip.address}');
+    return searchAddress(InternetAddress(address));
+  }
+
+  Future<dynamic?> searchAddress(InternetAddress address) {
+    if (address.type == InternetAddressType.IPv4 && ip_version == 6) {
+      return searchAddress(address.toIPv6());
     }
 
-    if (ip.type == InternetAddressType.IPv6 && ip_version == 4) {
+    if (address.type == InternetAddressType.IPv6 && ip_version == 4) {
       throw Exception(
           "An IPv6 address can't be processed by this IPv4 database.");
     }
 
-    return _search(data, 0, ip.rawAddress.bits);
+    return _search(data, 0, address.rawAddress.bits);
   }
 
   Future<dynamic> _search(
