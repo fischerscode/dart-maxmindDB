@@ -7,18 +7,47 @@ import 'dart:typed_data';
 import 'data_provider.dart';
 import 'package:extendedip/extendedip.dart';
 
+/// A [MaxMindDatabase] is the dart equivalent of a mmdb-file.
 class MaxMindDatabase {
+  /// The number of nodes in the database.
   final int node_count;
+
+  /// The size of each record in the database.
+  /// One node contains two records.
   final int record_size;
+
+  /// The IP version this database is for.
+  /// An v4 address can also be searched in a v6 database.
   final int ip_version;
+
+  /// The database type.
+  /// See specification.
   final String database_type;
+
+  /// An list of locale codes.
+  /// A record may contain data items that have been localized to some or all of these locales.
+  /// Records should not contain localized data for locales not included in this array.
   final List<String> languages;
+
+  /// The major version of the specification this database uses.
   final int binary_format_major_version;
+
+  /// The minor version of the specification this database uses.
   final int binary_format_minor_version;
+
+  /// The database build timestamp as a Unix epoch value.
   final int build_epoch;
+
+  /// A database description.
+  /// The codes may include additional information such as script or country identifiers,
+  /// like “zh-TW” or “mn-Cyrl-MN”.
+  /// The additional identifiers will be separated by a dash character (“-“).
   final Map<String, String> description;
+
+  /// The datasource of this database.
   final DataProvider data;
 
+  /// Create a [MaxMindDatabase] instance from metadata.
   MaxMindDatabase._({
     required this.node_count,
     required this.record_size,
@@ -32,14 +61,17 @@ class MaxMindDatabase {
     required this.data,
   });
 
+  /// Create a [MaxMindDatabase] instance from a mmdb-[file].
   static Future<MaxMindDatabase> file(File file) {
     return MaxMindDatabase.dataProvider(DataProvider(file));
   }
 
+  /// Create a [MaxMindDatabase] instance from the loaded [data] of an mmdb-file.
   static Future<MaxMindDatabase> memory(Uint8List data) {
     return MaxMindDatabase.dataProvider(DataProvider.memory(data));
   }
 
+  /// Create a [MaxMindDatabase] instance while getting the [data] from a [DataProvider].
   static Future<MaxMindDatabase> dataProvider(DataProvider data) async {
     var METADATA_BEGIN_MARKER =
         [0xAB, 0xCD, 0xEF] + ascii.encoder.convert('MaxMind.com');
@@ -56,20 +88,24 @@ class MaxMindDatabase {
       binary_format_minor_version: meta['binary_format_minor_version'],
       build_epoch: meta['build_epoch'],
       database_type: meta['database_type'],
-      description: (meta['description'] as Map<String, dynamic>)
-          .map((key, value) => MapEntry(key, value as String)),
+      description:
+          ((meta['description'] ?? <String, dynamic>{}) as Map<String, dynamic>)
+              .map((key, value) => MapEntry(key, value as String)),
       ip_version: meta['ip_version'],
-      languages:
-          (meta['languages'] as List<dynamic>).map((e) => e as String).toList(),
+      languages: ((meta['languages'] ?? <dynamic>[]) as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
       node_count: meta['node_count'],
       record_size: meta['record_size'],
     );
   }
 
+  /// Search the database for an ip [address] in [String] format.
   Future<dynamic?> search(String address) {
     return searchAddress(InternetAddress(address));
   }
 
+  /// Search the database for an ip [address] that has been parsed to a [InternetAddress].
   Future<dynamic?> searchAddress(InternetAddress address) {
     if (address.type == InternetAddressType.IPv4 && ip_version == 6) {
       return searchAddress(address.toIPv6());
@@ -83,6 +119,9 @@ class MaxMindDatabase {
     return _search(data, 0, address.rawAddress.bits);
   }
 
+  /// Recursively search the remaining [address] in the [data] by
+  /// reading the next bit from the [address] and reading the new position from
+  /// the [node] accordingly.
   Future<dynamic> _search(
       DataProvider data, int node, List<bool> address) async {
     var bytes = Uint8List(8);

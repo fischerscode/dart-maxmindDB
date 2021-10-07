@@ -2,33 +2,44 @@ import 'dart:io';
 
 import 'dart:typed_data';
 
+/// An abstraction of a byte store like a [File] or [Uint8List].
 abstract class DataProvider {
+  /// Read the first byte at this [position].
   Future<int> readByte(int position);
+
+  ///Read the bytes from [start] to [end].
   Future<Uint8List> readBytes(int start, int end);
 
-  DataProvider._();
+  /// Create a new [DataProvider].
+  /// Used for sub classes.
+  DataProvider.create();
 
+  /// Create a new [DataProvider] based on a [file].
   factory DataProvider(File file) {
-    return _FileDataProvider(file);
+    return FileDataProvider(file);
   }
 
+  /// Create a new [DataProvider] based on [data] that is in memory.
   factory DataProvider.memory(Uint8List data) {
-    return _MemoryDataProvider(data);
+    return MemoryDataProvider(data);
   }
 
+  /// Read the first byte at this [position].
   Future<int> operator [](int position) => readByte(position);
 
+  /// Get the length of this data.
   Future<int> get length;
 }
 
-class _FileDataProvider extends DataProvider {
+/// A [DataProvider] that uses a [File] as an data store.
+class FileDataProvider extends DataProvider {
+  /// The file that contains the data.
   final RandomAccessFile _file;
 
-  _FileDataProvider._(this._file) : super._();
-
-  factory _FileDataProvider(File file) {
-    return _FileDataProvider._(file.openSync());
-  }
+  /// Create a new [FileDataProvider].
+  FileDataProvider(File file)
+      : _file = file.openSync(),
+        super.create();
 
   @override
   Future<int> readByte(int position) async {
@@ -46,10 +57,13 @@ class _FileDataProvider extends DataProvider {
   Future<int> get length => _file.length();
 }
 
-class _MemoryDataProvider extends DataProvider {
+/// A [DataProvider] that stores the data in memory.
+class MemoryDataProvider extends DataProvider {
+  /// The data.
   final Uint8List _data;
 
-  _MemoryDataProvider(this._data) : super._();
+  /// Create a new [MemoryDataProvider].
+  MemoryDataProvider(this._data) : super.create();
 
   @override
   Future<int> readByte(int position) async {
