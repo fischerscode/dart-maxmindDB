@@ -150,8 +150,8 @@ class MaxMindDatabase {
         bytes.setRange(
             8 - length.floor(),
             8,
-            await data.readBytes((node * length * 2).floor() + length.ceil(),
-                (node * length * 2).floor() + length.ceil() + length.floor()));
+            await data.readBytes((node * length * 2).floor() + ceiledLength,
+                (node * length * 2).floor() + ceiledLength + length.floor()));
         bytes[8 - length.ceil()] =
             await data[(node * length * 2).floor() + length.floor()] &
                 calculateMask(record_size % 8);
@@ -400,20 +400,20 @@ extension _DataType on _Type {
 }
 
 extension on DataProvider {
-  Future<int?> searchFirstSequence(List<int> sequence) async {
-    var position = 0;
-    for (var i = 0; i < await length; i++) {
-      if (await this[i] == sequence[position]) {
-        position++;
-        if (position == sequence.length) {
-          return i - position + 1;
-        }
-      } else {
-        position = 0;
-      }
-    }
-    return null;
-  }
+  // Future<int?> searchFirstSequence(List<int> sequence) async {
+  //   var position = 0;
+  //   for (var i = 0; i < await length; i++) {
+  //     if (await this[i] == sequence[position]) {
+  //       position++;
+  //       if (position == sequence.length) {
+  //         return i - position + 1;
+  //       }
+  //     } else {
+  //       position = 0;
+  //     }
+  //   }
+  //   return null;
+  // }
 
   Future<int?> searchLastSequence(List<int> sequence) async {
     var position = sequence.length - 1;

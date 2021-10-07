@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:maxminddb/maxminddb.dart';
 
-main(List<String> args) async {
+void main(List<String> args) async {
   late MaxMindDatabase database;
   if (args.isNotEmpty && args[0] == 'memory') {
     database = await MaxMindDatabase.memory(

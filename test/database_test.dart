@@ -6,7 +6,7 @@ import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 import 'package:test/test.dart';
 
-main() async {
+void main() async {
   var databases = [
     {
       'name': 'MaxMind-DB-test-ipv4-24.mmdb',
