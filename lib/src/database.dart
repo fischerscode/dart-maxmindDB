@@ -181,7 +181,7 @@ class MaxMindDatabase {
     return result;
   }
 
-  static Future<Data> decodeData(
+  static Future<_Data> decodeData(
       DataProvider data, int position, int start) async {
     var type = await data[position] >> 5;
     var size = await data[position] & 0x1F;
@@ -233,10 +233,10 @@ class MaxMindDatabase {
             break;
         }
 
-        return Data(
+        return _Data(
             position + 1, (await decodeData(data, start + value, start)).data);
       case _Type.String:
-        return Data(position + size,
+        return _Data(position + size,
             utf8.decode(await data.readBytes(position, position + size)));
       case _Type.Double:
         assert(size == 8);
@@ -244,9 +244,9 @@ class MaxMindDatabase {
         var bytes =
             ByteData.sublistView(await data.readBytes(position, position + 8));
 
-        return Data(position + 8, bytes.getFloat64(0));
+        return _Data(position + 8, bytes.getFloat64(0));
       case _Type.Bytes:
-        return Data(
+        return _Data(
             position + size, await data.readBytes(position, position + size));
       case _Type.uInt16:
         var value = BigInt.from(0);
@@ -256,7 +256,7 @@ class MaxMindDatabase {
           value = value + BigInt.from(await data[position]);
           position++;
         }
-        return Data(position, value.toUnsigned(16).toInt().toUnsigned(16));
+        return _Data(position, value.toUnsigned(16).toInt().toUnsigned(16));
       case _Type.uInt32:
         var value = BigInt.from(0);
 
@@ -265,7 +265,7 @@ class MaxMindDatabase {
           value = value + BigInt.from(await data[position]);
           position++;
         }
-        return Data(position, value.toUnsigned(32).toInt().toUnsigned(32));
+        return _Data(position, value.toUnsigned(32).toInt().toUnsigned(32));
       case _Type.Map:
         var map = <String, dynamic>{};
         for (var i = 0; i < size; i++) {
@@ -275,7 +275,7 @@ class MaxMindDatabase {
           position = value.possitionAfter;
           map[key.data] = value.data;
         }
-        return Data(position, map);
+        return _Data(position, map);
       case _Type.Int32:
         var value = BigInt.from(0);
 
@@ -284,7 +284,7 @@ class MaxMindDatabase {
           value = value + BigInt.from(await data[position]);
           position++;
         }
-        return Data(position, value.toInt());
+        return _Data(position, value.toInt());
       case _Type.uInt64:
         var value = BigInt.from(0);
 
@@ -293,7 +293,7 @@ class MaxMindDatabase {
           value = value + BigInt.from(await data[position]);
           position++;
         }
-        return Data(position, value.toUnsigned(64).toInt().toUnsigned(64));
+        return _Data(position, value.toUnsigned(64).toInt().toUnsigned(64));
       case _Type.uInt128:
         var value = BigInt.from(0);
 
@@ -302,7 +302,7 @@ class MaxMindDatabase {
           value = value + BigInt.from(await data[position]);
           position++;
         }
-        return Data(position, value.toUnsigned(128));
+        return _Data(position, value.toUnsigned(128));
       case _Type.Array:
         var array = [];
         for (var i = 0; i < size; i++) {
@@ -310,17 +310,17 @@ class MaxMindDatabase {
           position = value.possitionAfter;
           array.add(value.data);
         }
-        return Data(position, array);
+        return _Data(position, array);
       case _Type.Boolean:
-        return Data(position, size == 1);
+        return _Data(position, size == 1);
       case _Type.Float:
         assert(size == 4);
-        return Data(
+        return _Data(
             position + 4,
             ByteData.sublistView(await data.readBytes(position, position + 4))
                 .getFloat32(0));
       default:
-        return Data(position, null);
+        return _Data(position, null);
     }
   }
 }
@@ -343,11 +343,11 @@ extension on Uint8List {
   }
 }
 
-class Data<T> {
+class _Data<T> {
   final int possitionAfter;
   final T data;
 
-  Data(this.possitionAfter, this.data);
+  _Data(this.possitionAfter, this.data);
 }
 
 enum _Type {

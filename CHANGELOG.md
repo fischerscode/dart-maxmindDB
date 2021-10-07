@@ -2,6 +2,7 @@
 
 - Make DataProviders public
 - Don't crash when languages or descriptions are not in database.
+- Data is now private. Data is a class only useful in one specific internal case. Therefore this change is seen as a bug fix rather than a Breaking Change.
 
 ## 1.1.0
 
