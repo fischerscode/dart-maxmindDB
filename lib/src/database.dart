@@ -1,28 +1,43 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
-
 import 'dart:typed_data';
 
-import 'data_provider.dart';
 import 'package:extendedip/extendedip.dart';
+
+import 'package:maxminddb/src/data_provider.dart';
 
 /// A [MaxMindDatabase] is the dart equivalent of a mmdb-file.
 class MaxMindDatabase {
   /// The number of nodes in the database.
-  final int node_count;
+  final int nodeCount;
+
+  @Deprecated("Use nodeCount instead.")
+  // ignore: non_constant_identifier_names
+  int get node_count => nodeCount;
 
   /// The size of each record in the database.
   /// One node contains two records.
-  final int record_size;
+  final int recordSize;
+
+  @Deprecated("Use recordSize instead.")
+  // ignore: non_constant_identifier_names
+  int get record_size => recordSize;
 
   /// The IP version this database is for.
   /// An v4 address can also be searched in a v6 database.
-  final int ip_version;
+  final int ipVersion;
+
+  @Deprecated("Use ipVersion instead.")
+  // ignore: non_constant_identifier_names
+  int get ip_version => ipVersion;
 
   /// The database type.
   /// See specification.
-  final String database_type;
+  final String databaseType;
+
+  @Deprecated("Use databaseType instead.")
+  // ignore: non_constant_identifier_names
+  String get database_type => databaseType;
 
   /// An list of locale codes.
   /// A record may contain data items that have been localized to some or all of these locales.
@@ -30,13 +45,25 @@ class MaxMindDatabase {
   final List<String> languages;
 
   /// The major version of the specification this database uses.
-  final int binary_format_major_version;
+  final int binaryFormatMajorVersion;
+
+  @Deprecated("Use binaryFormatMajorVersion instead.")
+  // ignore: non_constant_identifier_names
+  int get binary_format_major_version => binaryFormatMajorVersion;
 
   /// The minor version of the specification this database uses.
-  final int binary_format_minor_version;
+  final int binaryFormatMinorVersion;
+
+  @Deprecated("Use binaryFormatMinorVersion instead.")
+  // ignore: non_constant_identifier_names
+  int get binary_format_minor_version => binaryFormatMinorVersion;
 
   /// The database build timestamp as a Unix epoch value.
-  final int build_epoch;
+  final int buildEpoch;
+
+  @Deprecated("Use buildEpoch instead.")
+  // ignore: non_constant_identifier_names
+  int get build_epoch => buildEpoch;
 
   /// A database description.
   /// The codes may include additional information such as script or country identifiers,
@@ -49,14 +76,14 @@ class MaxMindDatabase {
 
   /// Create a [MaxMindDatabase] instance from metadata.
   MaxMindDatabase._({
-    required this.node_count,
-    required this.record_size,
-    required this.ip_version,
-    required this.database_type,
+    required this.nodeCount,
+    required this.recordSize,
+    required this.ipVersion,
+    required this.databaseType,
     required this.languages,
-    required this.binary_format_major_version,
-    required this.binary_format_minor_version,
-    required this.build_epoch,
+    required this.binaryFormatMajorVersion,
+    required this.binaryFormatMinorVersion,
+    required this.buildEpoch,
     required this.description,
     required this.data,
   });
@@ -73,47 +100,52 @@ class MaxMindDatabase {
 
   /// Create a [MaxMindDatabase] instance while getting the [data] from a [DataProvider].
   static Future<MaxMindDatabase> dataProvider(DataProvider data) async {
-    var METADATA_BEGIN_MARKER =
+    // METADATA_BEGIN_MARKER
+    final metadataBeginMarker =
         [0xAB, 0xCD, 0xEF] + ascii.encoder.convert('MaxMind.com');
 
-    var metaDataStart = (await data.searchLastSequence(METADATA_BEGIN_MARKER))!;
+    final metaDataStart = (await data.searchLastSequence(metadataBeginMarker))!;
 
-    Map<dynamic, dynamic> meta = (await decodeData(
-            data, metaDataStart + METADATA_BEGIN_MARKER.length, metaDataStart))
-        .data;
+    final meta = (await _decodeData(
+      data,
+      metaDataStart + metadataBeginMarker.length,
+      metaDataStart,
+    ))
+        .data as Map<dynamic, dynamic>;
 
     return MaxMindDatabase._(
       data: data,
-      binary_format_major_version: meta['binary_format_major_version'],
-      binary_format_minor_version: meta['binary_format_minor_version'],
-      build_epoch: meta['build_epoch'],
-      database_type: meta['database_type'],
+      binaryFormatMajorVersion: meta['binary_format_major_version'] as int,
+      binaryFormatMinorVersion: meta['binary_format_minor_version'] as int,
+      buildEpoch: meta['build_epoch'] as int,
+      databaseType: meta['database_type'] as String,
       description:
           ((meta['description'] ?? <String, dynamic>{}) as Map<String, dynamic>)
               .map((key, value) => MapEntry(key, value as String)),
-      ip_version: meta['ip_version'],
+      ipVersion: meta['ip_version'] as int,
       languages: ((meta['languages'] ?? <dynamic>[]) as List<dynamic>)
           .map((e) => e as String)
           .toList(),
-      node_count: meta['node_count'],
-      record_size: meta['record_size'],
+      nodeCount: meta['node_count'] as int,
+      recordSize: meta['record_size'] as int,
     );
   }
 
   /// Search the database for an ip [address] in [String] format.
-  Future<dynamic?> search(String address) {
+  Future<dynamic> search(String address) {
     return searchAddress(InternetAddress(address));
   }
 
   /// Search the database for an ip [address] that has been parsed to a [InternetAddress].
-  Future<dynamic?> searchAddress(InternetAddress address) {
-    if (address.type == InternetAddressType.IPv4 && ip_version == 6) {
+  Future<dynamic> searchAddress(InternetAddress address) {
+    if (address.type == InternetAddressType.IPv4 && ipVersion == 6) {
       return searchAddress(address.toIPv6());
     }
 
-    if (address.type == InternetAddressType.IPv6 && ip_version == 4) {
+    if (address.type == InternetAddressType.IPv6 && ipVersion == 4) {
       throw Exception(
-          "An IPv6 address can't be processed by this IPv4 database.");
+        "An IPv6 address can't be processed by this IPv4 database.",
+      );
     }
 
     return _search(data, 0, address.rawAddress.bits);
@@ -123,57 +155,72 @@ class MaxMindDatabase {
   /// reading the next bit from the [address] and reading the new position from
   /// the [node] accordingly.
   Future<dynamic> _search(
-      DataProvider data, int node, List<bool> address) async {
-    var bytes = Uint8List(8);
-    if (record_size % 8 == 0) {
-      var length = record_size ~/ 8;
+    DataProvider data,
+    int node,
+    List<bool> address,
+  ) async {
+    final bytes = Uint8List(8);
+    if (recordSize % 8 == 0) {
+      final length = recordSize ~/ 8;
 
       bytes.setRange(
-          8 - length,
-          8,
-          await data.readBytes(node * length * 2 + address[0] * length,
-              node * length * 2 + length + address[0] * length));
+        8 - length,
+        8,
+        await data.readBytes(
+          node * length * 2 + address[0] * length,
+          node * length * 2 + length + address[0] * length,
+        ),
+      );
     } else {
-      var length = record_size / 8;
-      var ceiledLength = length.ceil();
-      var flooredLength = length.floor();
+      final length = recordSize / 8;
+      final ceiledLength = length.ceil();
+      final flooredLength = length.floor();
       if (!address[0]) {
         bytes.setRange(
-            8 - flooredLength,
-            8,
-            await data.readBytes((node * length * 2).floor(),
-                (node * length * 2).floor() + flooredLength));
+          8 - flooredLength,
+          8,
+          await data.readBytes(
+            (node * length * 2).floor(),
+            (node * length * 2).floor() + flooredLength,
+          ),
+        );
         bytes[8 - length.ceil()] =
             await data[(node * length * 2).floor() + flooredLength] >>
-                record_size % 8;
+                recordSize % 8;
       } else {
         bytes.setRange(
-            8 - length.floor(),
-            8,
-            await data.readBytes((node * length * 2).floor() + ceiledLength,
-                (node * length * 2).floor() + ceiledLength + length.floor()));
+          8 - length.floor(),
+          8,
+          await data.readBytes(
+            (node * length * 2).floor() + ceiledLength,
+            (node * length * 2).floor() + ceiledLength + length.floor(),
+          ),
+        );
         bytes[8 - length.ceil()] =
             await data[(node * length * 2).floor() + length.floor()] &
-                calculateMask(record_size % 8);
+                calculateMask(recordSize % 8);
       }
     }
 
-    var location = ByteData.sublistView(bytes).getUint64(0);
+    final location = ByteData.sublistView(bytes).getUint64(0);
 
-    if (location > node_count) {
-      var search_tree_size = (record_size / 4 * node_count).floor();
+    if (location > nodeCount) {
+      final searchTreeSize = (recordSize / 4 * nodeCount).floor();
 
-      return (await decodeData(data, location - node_count + search_tree_size,
-              search_tree_size + 16))
+      return (await _decodeData(
+        data,
+        location - nodeCount + searchTreeSize,
+        searchTreeSize + 16,
+      ))
           .data;
-    } else if (location == node_count) {
+    } else if (location == nodeCount) {
       return null;
     } else {
       return _search(data, location, address..removeAt(0));
     }
   }
 
-  int calculateMask(var length) {
+  int calculateMask(int length) {
     var result = 0;
     for (var i = 0; i < length; i++) {
       result += pow(2, i).floor();
@@ -181,47 +228,62 @@ class MaxMindDatabase {
     return result;
   }
 
+  @Deprecated("Will be removed in 2.0.0")
+  // ignore: library_private_types_in_public_api
   static Future<_Data> decodeData(
-      DataProvider data, int position, int start) async {
-    var type = await data[position] >> 5;
-    var size = await data[position] & 0x1F;
+    DataProvider data,
+    int position,
+    int start,
+  ) =>
+      _decodeData(data, position, start);
+
+  static Future<_Data> _decodeData(
+    DataProvider data,
+    int position,
+    int start,
+  ) async {
+    var currentPosition = position;
+    var type = await data[currentPosition] >> 5;
+    var size = await data[currentPosition] & 0x1F;
 
     if (type != 1) {
       if (type == 0) {
-        position++;
-        type = await data[position] + 7;
+        currentPosition++;
+        type = await data[currentPosition] + 7;
       }
 
-      position++; // first after type specifying bytes
+      currentPosition++; // first after type specifying bytes
       if (size < 29) {
         //payload size
       } else if (size == 29) {
         // If the value is 29, then the size is 29 + the next byte after the type specifying bytes as an unsigned integer.
-        size = 29 + await data[position];
-        position++;
+        size = 29 + await data[currentPosition];
+        currentPosition++;
       } else if (size == 30) {
         // If the value is 30, then the size is 285 + the next two bytes after the type specifying bytes as a single unsigned integer.
-        size = 285 + (await data[position] << 8) + await data[position + 1];
-        position += 2;
+        size = 285 +
+            (await data[currentPosition] << 8) +
+            await data[currentPosition + 1];
+        currentPosition += 2;
       } else if (size == 31) {
         // If the value is 31, then the size is 65,821 + the next three bytes after the type specifying bytes as a single unsigned integer.
         size = 65821 +
-            (await data[position] << 16) +
-            (await data[position + 1] << 8) +
-            await data[position + 2];
-        position += 3;
+            (await data[currentPosition] << 16) +
+            (await data[currentPosition + 1] << 8) +
+            await data[currentPosition + 2];
+        currentPosition += 3;
       }
     }
 
     switch (_DataType.get(type)) {
-      case _Type.Pointer:
-        var pointerType = ((await data[position] >> 3) & 0x3);
+      case _Type.pointer:
+        final pointerType = (await data[currentPosition] >> 3) & 0x3;
 
-        var value = pointerType < 3 ? await data[position] & 0x7 : 0;
+        var value = pointerType < 3 ? await data[currentPosition] & 0x7 : 0;
         for (var i = 0; i <= pointerType; i++) {
-          position++;
+          currentPosition++;
           value = value << 8;
-          value = value | await data[position];
+          value = value | await data[currentPosition];
         }
 
         switch (pointerType) {
@@ -234,93 +296,113 @@ class MaxMindDatabase {
         }
 
         return _Data(
-            position + 1, (await decodeData(data, start + value, start)).data);
-      case _Type.String:
-        return _Data(position + size,
-            utf8.decode(await data.readBytes(position, position + size)));
-      case _Type.Double:
+          currentPosition + 1,
+          (await _decodeData(data, start + value, start)).data,
+        );
+      case _Type.string:
+        return _Data<String>(
+          currentPosition + size,
+          utf8.decode(
+            await data.readBytes(currentPosition, currentPosition + size),
+          ),
+        );
+      case _Type.double:
         assert(size == 8);
 
-        var bytes =
-            ByteData.sublistView(await data.readBytes(position, position + 8));
+        final bytes = ByteData.sublistView(
+          await data.readBytes(currentPosition, currentPosition + 8),
+        );
 
-        return _Data(position + 8, bytes.getFloat64(0));
-      case _Type.Bytes:
+        return _Data<double>(currentPosition + 8, bytes.getFloat64(0));
+      case _Type.bytes:
         return _Data(
-            position + size, await data.readBytes(position, position + size));
+          currentPosition + size,
+          await data.readBytes(currentPosition, currentPosition + size),
+        );
       case _Type.uInt16:
         var value = BigInt.from(0);
 
         for (var i = 0; i < size; i++) {
           value = value << 8;
-          value = value + BigInt.from(await data[position]);
-          position++;
+          value = value + BigInt.from(await data[currentPosition]);
+          currentPosition++;
         }
-        return _Data(position, value.toUnsigned(16).toInt().toUnsigned(16));
+        return _Data<int>(
+          currentPosition,
+          value.toUnsigned(16).toInt().toUnsigned(16),
+        );
       case _Type.uInt32:
         var value = BigInt.from(0);
 
         for (var i = 0; i < size; i++) {
           value = value << 8;
-          value = value + BigInt.from(await data[position]);
-          position++;
+          value = value + BigInt.from(await data[currentPosition]);
+          currentPosition++;
         }
-        return _Data(position, value.toUnsigned(32).toInt().toUnsigned(32));
-      case _Type.Map:
-        var map = <String, dynamic>{};
+        return _Data<int>(
+          currentPosition,
+          value.toUnsigned(32).toInt().toUnsigned(32),
+        );
+      case _Type.map:
+        final map = <String, dynamic>{};
         for (var i = 0; i < size; i++) {
-          var key = await decodeData(data, position, start);
-          position = key.possitionAfter;
-          var value = await decodeData(data, position, start);
-          position = value.possitionAfter;
-          map[key.data] = value.data;
+          final key = await _decodeData(data, currentPosition, start);
+          currentPosition = key.possitionAfter;
+          final value = await _decodeData(data, currentPosition, start);
+          currentPosition = value.possitionAfter;
+          map[key.data as String] = value.data;
         }
-        return _Data(position, map);
-      case _Type.Int32:
+        return _Data<Map<String, dynamic>>(currentPosition, map);
+      case _Type.int32:
         var value = BigInt.from(0);
 
         for (var i = 0; i < size; i++) {
           value = value << 8;
-          value = value + BigInt.from(await data[position]);
-          position++;
+          value = value + BigInt.from(await data[currentPosition]);
+          currentPosition++;
         }
-        return _Data(position, value.toInt());
+        return _Data<int>(currentPosition, value.toInt());
       case _Type.uInt64:
         var value = BigInt.from(0);
 
         for (var i = 0; i < size; i++) {
           value = value << 8;
-          value = value + BigInt.from(await data[position]);
-          position++;
+          value = value + BigInt.from(await data[currentPosition]);
+          currentPosition++;
         }
-        return _Data(position, value.toUnsigned(64).toInt().toUnsigned(64));
+        return _Data<int>(
+          currentPosition,
+          value.toUnsigned(64).toInt().toUnsigned(64),
+        );
       case _Type.uInt128:
         var value = BigInt.from(0);
 
         for (var i = 0; i < size; i++) {
           value = value << 8;
-          value = value + BigInt.from(await data[position]);
-          position++;
+          value = value + BigInt.from(await data[currentPosition]);
+          currentPosition++;
         }
-        return _Data(position, value.toUnsigned(128));
-      case _Type.Array:
-        var array = [];
+        return _Data<BigInt>(currentPosition, value.toUnsigned(128));
+      case _Type.array:
+        final array = [];
         for (var i = 0; i < size; i++) {
-          var value = await decodeData(data, position, start);
-          position = value.possitionAfter;
+          final value = await _decodeData(data, currentPosition, start);
+          currentPosition = value.possitionAfter;
           array.add(value.data);
         }
-        return _Data(position, array);
-      case _Type.Boolean:
-        return _Data(position, size == 1);
-      case _Type.Float:
+        return _Data(currentPosition, array);
+      case _Type.boolean:
+        return _Data(currentPosition, size == 1);
+      case _Type.float:
         assert(size == 4);
         return _Data(
-            position + 4,
-            ByteData.sublistView(await data.readBytes(position, position + 4))
-                .getFloat32(0));
+          currentPosition + 4,
+          ByteData.sublistView(
+            await data.readBytes(currentPosition, currentPosition + 4),
+          ).getFloat32(0),
+        );
       default:
-        return _Data(position, null);
+        return _Data(currentPosition, null);
     }
   }
 }
@@ -334,7 +416,7 @@ extension on bool {
 extension on Uint8List {
   List<bool> get bits {
     return map((byte) {
-      var res = <bool>[];
+      final res = <bool>[];
       for (var i = 0; i < 8; i++) {
         res.add((byte & (128 >> i)) > 0);
       }
@@ -351,51 +433,52 @@ class _Data<T> {
 }
 
 enum _Type {
-  Pointer,
-  String,
-  Double,
-  Bytes,
+  pointer,
+  string,
+  double,
+  bytes,
   uInt16,
   uInt32,
-  Map,
-  Int32,
+  map,
+  int32,
   uInt64,
   uInt128,
-  Array,
-  Boolean,
-  Float,
+  array,
+  boolean,
+  float,
 }
 
 extension _DataType on _Type {
   static _Type? get(int i) {
     switch (i) {
       case 1:
-        return _Type.Pointer;
+        return _Type.pointer;
       case 2:
-        return _Type.String;
+        return _Type.string;
       case 3:
-        return _Type.Double;
+        return _Type.double;
       case 4:
-        return _Type.Bytes;
+        return _Type.bytes;
       case 5:
         return _Type.uInt16;
       case 6:
         return _Type.uInt32;
       case 7:
-        return _Type.Map;
+        return _Type.map;
       case 8:
-        return _Type.Int32;
+        return _Type.int32;
       case 9:
         return _Type.uInt64;
       case 10:
         return _Type.uInt128;
       case 11:
-        return _Type.Array;
+        return _Type.array;
       case 14:
-        return _Type.Boolean;
+        return _Type.boolean;
       case 15:
-        return _Type.Float;
+        return _Type.float;
     }
+    return null;
   }
 }
 

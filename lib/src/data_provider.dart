@@ -10,14 +10,14 @@ abstract class DataProvider {
   ///Read the bytes from [start] to [end].
   Future<Uint8List> readBytes(int start, int end);
 
-  /// Create a new [DataProvider].
-  /// Used for sub classes.
-  DataProvider.create();
-
   /// Create a new [DataProvider] based on a [file].
   factory DataProvider(File file) {
     return FileDataProvider(file);
   }
+
+  /// Create a new [DataProvider].
+  /// Used for sub classes.
+  DataProvider.create();
 
   /// Create a new [DataProvider] based on [data] that is in memory.
   factory DataProvider.memory(Uint8List data) {

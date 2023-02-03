@@ -1,8 +1,8 @@
 # This file configures the analyzer to use the lint rule set from `package:lint`
 
 # include: package:lint/strict.yaml # For production apps
-# include: package:lint/casual.yaml # For code samples, hackathons and other non-production code
-include: package:lint/package.yaml # Use this for packages with public API
+include: package:lint/casual.yaml # For code samples, hackathons and other non-production code
+# include: package:lint/package.yaml # Use this for packages with public API
 
 # You might want to exclude auto-generated files from dart analysis
 analyzer:
