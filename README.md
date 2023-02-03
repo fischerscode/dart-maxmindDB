@@ -7,7 +7,12 @@ This dart library is capable of searching ip addresses in [MAXMINDs mmdb databas
 
 As its main use case, this library can be used to get the geo location of an IP address by using the [GeoLite2 Database](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data).
 
-## Usage:
+## Usage in command line:
+- `dart pub global activate maxminddb`
+- `maxminddb search 1.2.3.4`
+- Usage documentation: `maxminddb -h`
+
+## Usage in a dart program:
 1. Initialize the database:
    ```dart
    var database = await MaxMindDatabase.memory(
@@ -26,4 +31,4 @@ The result might vary depending on the database you are using.
 The database can either be loaded in memory or queried from a file system.
 Depending on the compute power and **disk speed**, loading the database in memory should be roughly 20 times faster.
 
-The library can be benchmarked using the [benchmark example](example/benshmark.dart).
+The library can be benchmarked using the [benchmark example](example/benchmark.dart).

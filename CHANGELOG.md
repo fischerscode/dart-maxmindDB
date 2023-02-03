@@ -1,3 +1,9 @@
+## 1.4.0
+
+- Add `maxminddb` executable for command line usage. Usage:
+  - `dart pub global activate maxminddb`
+  - `maxminddb search 1.2.3.4`
+
 ## 1.3.0
 
 - Use lint instead of pedantic.
