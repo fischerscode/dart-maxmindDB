@@ -1,3 +1,10 @@
+## 1.3.0
+
+- Use lint instead of pedantic.
+- Deprecate non camel case fields in favor new ones.
+- Deprecate `decodeData`.
+- Fix lint errors.
+
 ## 1.2.0
 
 - Make DataProviders public
