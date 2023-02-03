@@ -1,3 +1,7 @@
+## 1.4.1
+
+- Fix exit codes of the executable.
+
 ## 1.4.0
 
 - Add `maxminddb` executable for command line usage. Usage:

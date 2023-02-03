@@ -6,16 +6,35 @@ import 'package:args/command_runner.dart';
 import 'package:extendedip/extendedip.dart';
 import 'package:maxminddb/maxminddb.dart';
 
-void main(List<String> args) {
-  CommandRunner(
-    "maxminddb",
-    "A dart tool for working with MAXMINDs mmdb databases.",
-  )
-    ..addCommand(SearchCommand())
-    ..run(args);
+void main(List<String> args) async {
+  final code = await MaxMindDBCommandRunner().run(args);
+
+  await Future.wait([stdout.close(), stderr.close()]);
+
+  exit(code);
 }
 
-class SearchCommand extends Command {
+class MaxMindDBCommandRunner extends CommandRunner<int> {
+  MaxMindDBCommandRunner()
+      : super(
+          "maxminddb",
+          "A dart tool for working with MAXMINDs mmdb databases.",
+        ) {
+    addCommand(SearchCommand());
+  }
+
+  @override
+  Future<int> run(Iterable<String> args) async {
+    try {
+      return await super.run(args) ?? 0;
+    } on UsageException catch (e) {
+      stderr.writeln(e);
+      return 1;
+    }
+  }
+}
+
+class SearchCommand extends Command<int> {
   @override
   final name = "search";
   @override
@@ -49,13 +68,13 @@ class SearchCommand extends Command {
   }
 
   @override
-  Future<void> run() async {
+  Future<int> run() async {
     late MaxMindDatabase database;
 
     final databaseFile = File(argResults!["database"] as String);
     if (!await databaseFile.exists()) {
       stderr.writeln("The file ${databaseFile.absolute.path} doesn't exist.");
-      exit(-1);
+      return -1;
     }
 
     if (argResults?["memory"] == true) {
@@ -88,9 +107,10 @@ class SearchCommand extends Command {
             stdout.writeln("${e.key}: ${e.value}");
           }
       }
+      return 0;
     } catch (e) {
       stderr.writeln(e);
-      exit(-1);
+      return -1;
     }
   }
 }

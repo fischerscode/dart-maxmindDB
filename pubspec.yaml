@@ -1,7 +1,7 @@
 name: maxminddb
 description: A library for querying MaxMind databases (like GeoLite2-City.mmdb).
 repository: https://github.com/fischerscode/dart-maxminddb
-version: 1.4.0
+version: 1.4.1
 
 executables:
   maxminddb:
